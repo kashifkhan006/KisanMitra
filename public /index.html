@@ -1,4 +1,4 @@
-
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -35,9 +35,13 @@
       border-radius: 9px; cursor: pointer; font-weight: bold;
     }
     button:disabled { opacity: .6; cursor: wait; }
-    #preview { max-width: 100%; max-height: 300px; display: none;
-      margin: 16px auto; border-radius: 12px; }
-    #result { white-space: pre-wrap; line-height: 1.6; overflow-wrap: anywhere; }
+    #preview {
+      max-width: 100%; max-height: 300px; display: none;
+      margin: 16px auto; border-radius: 12px;
+    }
+    #result {
+      white-space: pre-wrap; line-height: 1.6; overflow-wrap: anywhere;
+    }
     .muted { color: #64776a; }
     footer { text-align: center; padding: 25px; color: #64776a; }
   </style>
@@ -57,7 +61,7 @@
     <p id="intro">Upload a clear crop-leaf photo to check for a possible disease.</p>
     <div class="upload">
       <label id="fileLabel" for="image">Choose a leaf image (JPG or PNG)</label>
-      <input id="image" type="file" accept="image/jpeg,image/png,image/webp">
+      <input id="image" type="file" accept="image/jpeg,image/png">
       <img id="preview" alt="Selected leaf preview">
       <br>
       <button id="predict">Predict condition</button>
@@ -74,34 +78,48 @@
 <footer>© KisanMitra · AI-powered crop disease assistance</footer>
 
 <script>
+const API_BASE = "https://kisanmitra-kmj0.onrender.com";
+
 const words = {
   en: {
     heading: "Your smart farming assistant",
     intro: "Upload a clear crop-leaf photo to check for a possible disease.",
     file: "Choose a leaf image (JPG or PNG)",
-    predict: "Predict condition", loading: "Analyzing image…",
+    predict: "Predict condition",
+    loading: "Analyzing image…",
     notice: "Use a clear, well-lit image for best results.",
     resultHeading: "Prediction result",
     waiting: "Your result will appear here after prediction.",
-    error: "Error: ", crop: "Crop", disease: "Condition",
-    confidence: "Confidence", healthy: "Healthy", advice: "Guidance",
-    top: "Other possibilities", low: "Could not understand the server response."
+    error: "Error: ",
+    crop: "Crop",
+    disease: "Condition",
+    confidence: "Confidence",
+    advice: "Guidance",
+    top: "Other possibilities",
+    timeout: "The request timed out. Please try again."
   },
   hi: {
     heading: "आपका स्मार्ट कृषि सहायक",
     intro: "संभावित बीमारी की जाँच के लिए पत्ती की साफ़ तस्वीर अपलोड करें।",
     file: "पत्ती की तस्वीर चुनें (JPG या PNG)",
-    predict: "जाँच करें", loading: "तस्वीर की जाँच हो रही है…",
+    predict: "जाँच करें",
+    loading: "तस्वीर की जाँच हो रही है…",
     notice: "बेहतर परिणाम के लिए साफ़ और अच्छी रोशनी वाली तस्वीर चुनें।",
     resultHeading: "जाँच का परिणाम",
     waiting: "जाँच के बाद परिणाम यहाँ दिखाई देगा।",
-    error: "त्रुटि: ", crop: "फसल", disease: "स्थिति",
-    confidence: "विश्वास स्तर", healthy: "स्वस्थ", advice: "सलाह",
-    top: "अन्य संभावनाएँ", low: "सर्वर का जवाब समझ नहीं आया।"
+    error: "त्रुटि: ",
+    crop: "फसल",
+    disease: "स्थिति",
+    confidence: "विश्वास स्तर",
+    advice: "सलाह",
+    top: "अन्य संभावनाएँ",
+    timeout: "अनुरोध में समय लग रहा है। कृपया दोबारा कोशिश करें।"
   }
 };
+
 const $ = id => document.getElementById(id);
 let lang = "en";
+
 $("language").addEventListener("change", () => {
   lang = $("language").value;
   const w = words[lang];
@@ -113,50 +131,108 @@ $("language").addEventListener("change", () => {
   $("resultHeading").textContent = w.resultHeading;
   $("result").textContent = w.waiting;
 });
+
 $("image").addEventListener("change", () => {
   const file = $("image").files[0];
   $("preview").style.display = file ? "block" : "none";
   if (file) $("preview").src = URL.createObjectURL(file);
 });
+
 $("predict").addEventListener("click", async () => {
   const w = words[lang];
   const file = $("image").files[0];
+
   if (!file) {
-    $("result").textContent = w.error + (lang === "hi" ? "पहले पत्ती की तस्वीर चुनें।" : "Please choose a leaf image first.");
+    $("result").textContent = w.error +
+      (lang === "hi" ? "पहले पत्ती की तस्वीर चुनें।" :
+      "Please choose a leaf image first.");
     return;
   }
+
+  if (!["image/jpeg", "image/png"].includes(file.type)) {
+    $("result").textContent = w.error +
+      (lang === "hi" ? "केवल JPG या PNG तस्वीर चुनें।" :
+      "Please select a JPG or PNG image.");
+    return;
+  }
+
   if (file.size > 4 * 1024 * 1024) {
-    $("result").textContent = w.error + (lang === "hi" ? "तस्वीर 4 MB से छोटी होनी चाहिए।" : "Image must be smaller than 4 MB.");
+    $("result").textContent = w.error +
+      (lang === "hi" ? "तस्वीर 4 MB से छोटी होनी चाहिए।" :
+      "Image must be smaller than 4 MB.");
     return;
   }
+
   const button = $("predict");
   button.disabled = true;
   button.textContent = w.loading;
   $("result").textContent = w.loading;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120000);
+
   try {
     const data = new FormData();
     data.append("image", file);
-    const response = await fetch("/api/predict", { method: "POST", body: data });
+
+    const response = await fetch(`${API_BASE}/api/predict`, {
+      method: "POST",
+      body: data,
+      signal: controller.signal
+    });
+
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      throw new Error(
+        `Server returned HTTP ${response.status}, not JSON. Check Render logs.`
+      );
+    }
+
     const result = await response.json();
-    if (!response.ok) throw new Error(result.error || "Prediction failed");
+
+    if (!response.ok) {
+      throw new Error(result.error || `Request failed (${response.status})`);
+    }
+
     const confidence = Number(result.confidence);
     const lines = [
       `${w.crop}: ${result.crop || "—"}`,
       `${w.disease}: ${result.disease || result.label || "—"}`,
-      `${w.confidence}: ${Number.isFinite(confidence) ? (confidence <= 1 ? confidence * 100 : confidence).toFixed(2) + "%" : "—"}`,
+      `${w.confidence}: ${
+        Number.isFinite(confidence)
+          ? (confidence <= 1 ? confidence * 100 : confidence).toFixed(2) + "%"
+          : "—"
+      }`,
       `${w.advice}: ${result.info || "—"}`
     ];
+
     if (Array.isArray(result.top)) {
       lines.push("", `${w.top}:`);
       result.top.forEach(item => {
         const score = Number(item.confidence);
-        lines.push(`• ${item.label}: ${Number.isFinite(score) ? (score <= 1 ? score * 100 : score).toFixed(2) + "%" : item.confidence}`);
+        lines.push(
+          `• ${item.label}: ${
+            Number.isFinite(score)
+              ? (score <= 1 ? score * 100 : score).toFixed(2) + "%"
+              : "—"
+          }`
+        );
       });
     }
+
     $("result").textContent = lines.join("\n");
+
   } catch (error) {
-    $("result").textContent = w.error + error.message;
+    if (error.name === "AbortError") {
+      $("result").textContent = w.error + w.timeout;
+    } else if (error instanceof TypeError) {
+      $("result").textContent = w.error +
+        "Could not connect to the API. Check the Render service and browser console.";
+    } else {
+      $("result").textContent = w.error + error.message;
+    }
   } finally {
+    clearTimeout(timeoutId);
     button.disabled = false;
     button.textContent = w.predict;
   }
@@ -164,3 +240,4 @@ $("predict").addEventListener("click", async () => {
 </script>
 </body>
 </html>
+```
