@@ -1,4 +1,3 @@
-```python
 from flask import Flask, jsonify, request, send_from_directory
 from pathlib import Path
 import sys
@@ -91,4 +90,3 @@ def too_large(error):
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
-```
