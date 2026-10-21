@@ -1,0 +1,166 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KisanMitra | Smart Farming Assistant</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: Arial, sans-serif; color: #173b2b;
+      background: #f1f8f1;
+    }
+    header {
+      background: #176b43; color: white; padding: 22px 7%;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 12px;
+    }
+    header h1 { margin: 0; font-size: 27px; }
+    select, button, input { font: inherit; }
+    header select { padding: 9px; border-radius: 8px; }
+    main { max-width: 850px; margin: 35px auto; padding: 0 18px; }
+    .card {
+      background: white; padding: 26px; border-radius: 18px;
+      box-shadow: 0 5px 22px #173b2b12; margin-bottom: 20px;
+    }
+    h2 { margin-top: 0; color: #176b43; }
+    .upload {
+      border: 2px dashed #7eae8c; padding: 26px; border-radius: 12px;
+      text-align: center; background: #f8fcf8;
+    }
+    input[type=file] { width: 100%; margin: 15px 0; }
+    button {
+      border: 0; background: #176b43; color: white; padding: 13px 22px;
+      border-radius: 9px; cursor: pointer; font-weight: bold;
+    }
+    button:disabled { opacity: .6; cursor: wait; }
+    #preview { max-width: 100%; max-height: 300px; display: none;
+      margin: 16px auto; border-radius: 12px; }
+    #result { white-space: pre-wrap; line-height: 1.6; overflow-wrap: anywhere; }
+    .muted { color: #64776a; }
+    footer { text-align: center; padding: 25px; color: #64776a; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>🌱 KisanMitra</h1>
+  <select id="language" aria-label="Language">
+    <option value="en">English</option>
+    <option value="hi">हिन्दी</option>
+  </select>
+</header>
+
+<main>
+  <section class="card">
+    <h2 id="heading">Your smart farming assistant</h2>
+    <p id="intro">Upload a clear crop-leaf photo to check for a possible disease.</p>
+    <div class="upload">
+      <label id="fileLabel" for="image">Choose a leaf image (JPG or PNG)</label>
+      <input id="image" type="file" accept="image/jpeg,image/png,image/webp">
+      <img id="preview" alt="Selected leaf preview">
+      <br>
+      <button id="predict">Predict condition</button>
+    </div>
+    <p class="muted" id="notice">Use a clear, well-lit image for best results.</p>
+  </section>
+
+  <section class="card" aria-live="polite">
+    <h2 id="resultHeading">Prediction result</h2>
+    <div id="result">Your result will appear here after prediction.</div>
+  </section>
+</main>
+
+<footer>© KisanMitra · AI-powered crop disease assistance</footer>
+
+<script>
+const words = {
+  en: {
+    heading: "Your smart farming assistant",
+    intro: "Upload a clear crop-leaf photo to check for a possible disease.",
+    file: "Choose a leaf image (JPG or PNG)",
+    predict: "Predict condition", loading: "Analyzing image…",
+    notice: "Use a clear, well-lit image for best results.",
+    resultHeading: "Prediction result",
+    waiting: "Your result will appear here after prediction.",
+    error: "Error: ", crop: "Crop", disease: "Condition",
+    confidence: "Confidence", healthy: "Healthy", advice: "Guidance",
+    top: "Other possibilities", low: "Could not understand the server response."
+  },
+  hi: {
+    heading: "आपका स्मार्ट कृषि सहायक",
+    intro: "संभावित बीमारी की जाँच के लिए पत्ती की साफ़ तस्वीर अपलोड करें।",
+    file: "पत्ती की तस्वीर चुनें (JPG या PNG)",
+    predict: "जाँच करें", loading: "तस्वीर की जाँच हो रही है…",
+    notice: "बेहतर परिणाम के लिए साफ़ और अच्छी रोशनी वाली तस्वीर चुनें।",
+    resultHeading: "जाँच का परिणाम",
+    waiting: "जाँच के बाद परिणाम यहाँ दिखाई देगा।",
+    error: "त्रुटि: ", crop: "फसल", disease: "स्थिति",
+    confidence: "विश्वास स्तर", healthy: "स्वस्थ", advice: "सलाह",
+    top: "अन्य संभावनाएँ", low: "सर्वर का जवाब समझ नहीं आया।"
+  }
+};
+const $ = id => document.getElementById(id);
+let lang = "en";
+$("language").addEventListener("change", () => {
+  lang = $("language").value;
+  const w = words[lang];
+  $("heading").textContent = w.heading;
+  $("intro").textContent = w.intro;
+  $("fileLabel").textContent = w.file;
+  $("predict").textContent = w.predict;
+  $("notice").textContent = w.notice;
+  $("resultHeading").textContent = w.resultHeading;
+  $("result").textContent = w.waiting;
+});
+$("image").addEventListener("change", () => {
+  const file = $("image").files[0];
+  $("preview").style.display = file ? "block" : "none";
+  if (file) $("preview").src = URL.createObjectURL(file);
+});
+$("predict").addEventListener("click", async () => {
+  const w = words[lang];
+  const file = $("image").files[0];
+  if (!file) {
+    $("result").textContent = w.error + (lang === "hi" ? "पहले पत्ती की तस्वीर चुनें।" : "Please choose a leaf image first.");
+    return;
+  }
+  if (file.size > 4 * 1024 * 1024) {
+    $("result").textContent = w.error + (lang === "hi" ? "तस्वीर 4 MB से छोटी होनी चाहिए।" : "Image must be smaller than 4 MB.");
+    return;
+  }
+  const button = $("predict");
+  button.disabled = true;
+  button.textContent = w.loading;
+  $("result").textContent = w.loading;
+  try {
+    const data = new FormData();
+    data.append("image", file);
+    const response = await fetch("/api/predict", { method: "POST", body: data });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Prediction failed");
+    const confidence = Number(result.confidence);
+    const lines = [
+      `${w.crop}: ${result.crop || "—"}`,
+      `${w.disease}: ${result.disease || result.label || "—"}`,
+      `${w.confidence}: ${Number.isFinite(confidence) ? (confidence <= 1 ? confidence * 100 : confidence).toFixed(2) + "%" : "—"}`,
+      `${w.advice}: ${result.info || "—"}`
+    ];
+    if (Array.isArray(result.top)) {
+      lines.push("", `${w.top}:`);
+      result.top.forEach(item => {
+        const score = Number(item.confidence);
+        lines.push(`• ${item.label}: ${Number.isFinite(score) ? (score <= 1 ? score * 100 : score).toFixed(2) + "%" : item.confidence}`);
+      });
+    }
+    $("result").textContent = lines.join("\n");
+  } catch (error) {
+    $("result").textContent = w.error + error.message;
+  } finally {
+    button.disabled = false;
+    button.textContent = w.predict;
+  }
+});
+</script>
+</body>
+</html>
