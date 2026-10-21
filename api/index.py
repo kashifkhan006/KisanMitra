@@ -19,9 +19,10 @@ def home():
     index_file = PUBLIC_DIR / "index.html"
 
     if not index_file.is_file():
+        app.logger.error("Homepage file not found: %s", index_file)
         return jsonify({
             "error": "Homepage file not found",
-            "expected_path": "public/index.html"
+            "expected_path": str(index_file)
         }), 500
 
     return send_from_directory(str(PUBLIC_DIR), "index.html")
@@ -52,7 +53,9 @@ def prediction():
     file = request.files.get("image")
 
     if not file:
-        return jsonify({"error": "Choose a leaf image first."}), 400
+        return jsonify({
+            "error": "Choose a leaf image first."
+        }), 400
 
     img, error = validate_upload(file.filename or "", file.read())
 
@@ -61,12 +64,14 @@ def prediction():
 
     try:
         result = predict(img)
+
         crop, disease = split_class_name(result["label"])
 
         result["crop"] = crop
         result["disease"] = disease
         result["healthy"] = is_healthy(disease)
         result["info"] = get_disease_info(disease)
+
         result["top"] = [
             {"label": label, "confidence": confidence}
             for label, confidence in result["top"]
