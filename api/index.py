@@ -1,39 +1,44 @@
-
+```python
 from flask import Flask, jsonify, request, send_from_directory
 from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parent.parent
+PUBLIC_DIR = ROOT / "public"
+
 sys.path.insert(0, str(ROOT))
 
 from inference import model_files_exist, predict, validate_upload
 from disease_info import get_disease_info, is_healthy, split_class_name
 
-app = Flask(
-    __name__,
-    static_folder=str(ROOT / "public"),
-    static_url_path=""
-)
-
+app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
 
 
-@app.get("/")
+@app.route("/", methods=["GET"])
 def home():
-    return send_from_directory(ROOT / "public", "index.html")
+    index_file = PUBLIC_DIR / "index.html"
+
+    if not index_file.is_file():
+        return jsonify({
+            "error": "Homepage file not found",
+            "expected_path": "public/index.html"
+        }), 500
+
+    return send_from_directory(str(PUBLIC_DIR), "index.html")
 
 
-@app.get("/api/health")
+@app.route("/api/health", methods=["GET"])
 def health():
     return jsonify({
         "ok": True,
-        "model_files_present": model_files_exist()
+        "model_files_present": model_files_exist(),
+        "homepage_exists": (PUBLIC_DIR / "index.html").is_file()
     })
 
 
 @app.route("/api/predict", methods=["GET", "POST"])
 def prediction():
-
     if request.method == "GET":
         return jsonify({
             "ok": True,
@@ -48,33 +53,23 @@ def prediction():
     file = request.files.get("image")
 
     if not file:
-        return jsonify({
-            "error": "Choose a leaf image first."
-        }), 400
+        return jsonify({"error": "Choose a leaf image first."}), 400
 
-    img, error = validate_upload(
-        file.filename or "",
-        file.read()
-    )
+    img, error = validate_upload(file.filename or "", file.read())
 
     if error:
         return jsonify({"error": error}), 400
 
     try:
         result = predict(img)
-
         crop, disease = split_class_name(result["label"])
 
         result["crop"] = crop
         result["disease"] = disease
         result["healthy"] = is_healthy(disease)
         result["info"] = get_disease_info(disease)
-
         result["top"] = [
-            {
-                "label": label,
-                "confidence": confidence
-            }
+            {"label": label, "confidence": confidence}
             for label, confidence in result["top"]
         ]
 
@@ -82,7 +77,6 @@ def prediction():
 
     except Exception:
         app.logger.exception("Prediction failed")
-
         return jsonify({
             "error": "Prediction failed. Check the Render logs."
         }), 500
@@ -97,3 +91,4 @@ def too_large(error):
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
+```
