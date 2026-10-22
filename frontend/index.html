@@ -217,7 +217,7 @@ const MAX=4*1024*1024,MIN=64;
 const showErr=k=>{errKey=k;$('err').textContent=t(k);$('err').classList.remove('hidden')};
 const setMeta=()=>{$('meta').textContent=`${metaInfo.n} · ${metaInfo.w}×${metaInfo.h} · ${metaInfo.kb} KB`};
 function clearAll(){errKey=null;resShown=false;metaInfo=null;$('err').classList.add('hidden');$('preview').classList.add('hidden');$('meta').textContent='';$('result').classList.add('hidden');$('go').disabled=true;$('file').value=''}
-function handle(f){clearAll();if(!f)return;
+function handle(f){clearAll();$('file').value = '';if(!f)return;
   if(!/\.(jpe?g|png)$/i.test(f.name)||!/^image\/(jpeg|png)$/.test(f.type))return showErr('type');
   if(f.size===0)return showErr('empty');
   if(f.size>MAX)return showErr('big');
