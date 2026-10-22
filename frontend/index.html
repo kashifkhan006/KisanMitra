@@ -176,7 +176,7 @@ footer{text-align:center;padding:22px 16px;color:var(--muted);font-size:.85rem;b
     <h3 data-hi="भविष्य की संभावनाएँ">Future scope</h3><ul><li data-hi="Grad-CAM हीटमैप">Grad-CAM heatmaps</li><li data-hi="अधिक फसलें और खेत की इमेज">More crops and field images</li><li data-hi="मोबाइल डिप्लॉयमेंट और बहुभाषी सलाह">Mobile deployment and multilingual advice</li></ul></div>
 </section>
 </div>
-<footer data-hi="किसान मित्र · CSE (AI एवं ML) प्रोजेक्ट · AI द्वारा बनाए गए अनुमान, निदान नहीं">KisanMitra · CSE (AI &amp; ML) project · AI-generated estimates, not a diagnosis</footer>
+<footer data-hi="किसान मित्र · CSE (AI एवं ML) प्रोजेक्ट · AI द्वारा बनाए गए अनुमान, निदान नहीं">KisanMitra · CSE (AI &amp; ML) project </footer>
 
 <script>
 const $=id=>document.getElementById(id);
@@ -200,7 +200,7 @@ function applyLang(){
   document.documentElement.lang=lang;
   $('l-en').classList.toggle('on',lang==='en');$('l-hi').classList.toggle('on',lang==='hi');
   if(errKey)$('err').textContent=t(errKey);
-  if(resShown)$('result').innerHTML=t('res');
+  // Keep the current prediction/error visible when changing language.
   if(metaInfo)setMeta();
   buildChips();if(cur)draw();
   document.title=lang==='hi'?'किसान मित्र | फसल रोग पूर्वानुमान':'KisanMitra | Crop Disease Predictor';
@@ -229,7 +229,10 @@ function handle(f){clearAll();if(!f)return;
 $('drop').onclick=()=>$('file').click();
 $('file').onchange=e=>handle(e.target.files[0]);
 ['dragover','dragleave','drop'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.toggle('over',ev==='dragover');if(ev==='drop')handle(e.dataTransfer.files[0])}));
-$('reset').onclick=clearAll;
+$('reset').onclick=()=>{
+  clearAll();
+  $('file').click();
+};
 const API_URL='https://kisanmitra-kmj0.onrender.com';
 $('go').onclick=async()=>{
   const f=$('file').files[0];
@@ -244,7 +247,10 @@ $('go').onclick=async()=>{
     const fd=new FormData();
     fd.append('image',f);
     const response=await fetch(`${API_URL}/api/predict`,{method:'POST',body:fd});
-    const data=await response.json();
+    const raw=await response.text();
+    let data;
+    try { data=JSON.parse(raw); }
+    catch { throw new Error(`API returned a non-JSON response (HTTP ${response.status}). Check the Render API logs.`); }
     if(!response.ok)throw new Error(data.error||(lang==='hi'?'पूर्वानुमान विफल हुआ।':'Prediction failed.'));
     const esc=value=>String(value??'').replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
     const pct=value=>`${(Number(value||0)*100).toFixed(1)}%`;
@@ -257,7 +263,11 @@ $('go').onclick=async()=>{
     $('result').innerHTML=`<h3>${lang==='hi'?'पूर्वानुमान का परिणाम':'Prediction result'}</h3><h2>${title}</h2><p><b>${lang==='hi'?'फसल':'Crop'}:</b> ${esc(data.crop||'—')}</p><p><b>${lang==='hi'?'विश्वास स्तर':'Model confidence'}:</b> ${pct(data.confidence)}</p>${uncertain}<h3>${lang==='hi'?'इस स्थिति के बारे में':'About this condition'}</h3><p>${esc(info.description||'')}</p><h3>${lang==='hi'?'संभावित लक्षण':'Possible signs'}</h3>${list(info.symptoms)}<h3>${lang==='hi'?'बचाव':'Prevention'}</h3>${list(info.prevention)}<h3>${lang==='hi'?'अगले कदम':'General next steps'}</h3>${list(info.management)}${top}<p class="disc">${lang==='hi'?'यह AI अनुमान है, निश्चित निदान नहीं। गंभीर समस्या में कृषि विशेषज्ञ से सलाह लें।':'This is an AI estimate, not a confirmed diagnosis. Consult an agricultural expert for serious crop problems.'}</p>`;
   }catch(error){
     resShown=false;
-    $('result').innerHTML=`<b>${lang==='hi'?'पूर्वानुमान नहीं हो सका':'Prediction could not be completed'}</b><p>${String(error.message||error)}</p><p class="disc">${lang==='hi'?'यदि CORS त्रुटि दिखे, तो Render API में CORS अनुमति जोड़नी होगी।':'If the browser reports a CORS error, CORS must be enabled on the Render API.'}</p>`;
+    const message=String(error.message||error);
+    const networkHint=/Failed to fetch|NetworkError|Load failed/i.test(message)
+      ? (lang==='hi'?'नेटवर्क या CORS समस्या: Render API में CORS अनुमति जाँचें और Render deployment पूरा होने दें।':'Network/CORS issue: check CORS headers on the Render API and wait for the Render deployment to finish.')
+      : (lang==='hi'?'Render API ने त्रुटि लौटाई। Render logs देखें।':'The Render API returned an error. Check the Render logs.');
+    $('result').innerHTML=`<b>${lang==='hi'?'पूर्वानुमान नहीं हो सका':'Prediction could not be completed'}</b><p>${message.replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]))}</p><p class="disc">${networkHint}</p>`;
   }finally{
     btn.disabled=false;
     btn.textContent=oldText;
