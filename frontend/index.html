@@ -193,7 +193,7 @@ const T={
  tabs:[['Symptoms','Prevention','Management'],['लक्षण','रोकथाम','प्रबंधन']]
 };
 const L=()=>lang==='hi'?1:0, t=k=>T[k][L()];
-let errKey=null,resShown=false,metaInfo=null;
+let errKey=null,resShown=false,metaInfo=null,selectedImage=null;
 document.querySelectorAll('[data-hi]').forEach(e=>e.dataset.en=e.innerHTML);
 function applyLang(){
   document.querySelectorAll('[data-hi]').forEach(e=>e.innerHTML=lang==='hi'?e.dataset.hi:e.dataset.en);
@@ -216,9 +216,10 @@ document.querySelectorAll('[data-go]').forEach(a=>a.onclick=()=>show(a.dataset.g
 const MAX=4*1024*1024,MIN=64;
 const showErr=k=>{errKey=k;$('err').textContent=t(k);$('err').classList.remove('hidden')};
 const setMeta=()=>{$('meta').textContent=`${metaInfo.n} · ${metaInfo.w}×${metaInfo.h} · ${metaInfo.kb} KB`};
-function clearAll(){errKey=null;resShown=false;metaInfo=null;$('err').classList.add('hidden');$('preview').classList.add('hidden');$('meta').textContent='';$('result').classList.add('hidden');$('go').disabled=true;$('file').value=''}
+function clearAll(){selectedImage=null;errKey=null;resShown=false;metaInfo=null;$('err').classList.add('hidden');$('preview').classList.add('hidden');$('meta').textContent='';$('result').classList.add('hidden');$('go').disabled=true;$('file').value='';}
 function handle(f){
   if(!f)return;
+  selectedImage=f;
   errKey=null;
   resShown=false;
   metaInfo=null;
@@ -236,7 +237,7 @@ function handle(f){
     metaInfo={n:f.name,w:im.naturalWidth,h:im.naturalHeight,kb:(f.size/1024).toFixed(0)};setMeta();$('go').disabled=false};
   im.onerror=()=>showErr('bad');im.src=url}
 $('drop').onclick=()=>$('file').click();
-$('file').onchange=e=>handle(e.target.files[0]);
+$('file').onchange=e=>handle(e.target.files && e.target.files[0]);
 ['dragover','dragleave','drop'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.toggle('over',ev==='dragover');if(ev==='drop')handle(e.dataTransfer.files[0])}));
 $('reset').onclick=()=>{
   clearAll();
@@ -244,8 +245,12 @@ $('reset').onclick=()=>{
 };
 const API_URL='https://kisanmitra-kmj0.onrender.com';
 $('go').onclick=async()=>{
-  const f=$('file').files[0];
-  if(!f)return;
+  const f=selectedImage || $('file').files[0];
+  if(!f){
+    $('result').classList.remove('hidden');
+    $('result').textContent=lang==='hi'?'कृपया पहले पत्ती की इमेज अपलोड करें।':'Please upload a leaf image first.';
+    return;
+  }
   const btn=$('go');
   const oldText=btn.textContent;
   btn.disabled=true;
