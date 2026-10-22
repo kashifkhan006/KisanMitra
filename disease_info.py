@@ -1,133 +1,101 @@
-"""General, non-prescriptive disease information shown in the web app.
-
-This is educational guidance only. It deliberately contains no pesticide
-names or doses: those depend on country, crop stage and local regulation.
-Always verify with a local agricultural extension office / KVK.
-Extend INFO with more entries if your final class list needs them.
-"""
-import re
-
-HEALTHY = {
-    "description": "The model predicts that this leaf looks like a healthy leaf of the supported crop.",
-    "symptoms": ["No obvious spots, lesions, mould, curling or discolouration in the image."],
-    "prevention": [
-        "Keep monitoring the crop regularly, including the undersides of leaves.",
-        "Use good field hygiene: remove crop debris and weeds.",
-        "Avoid overhead irrigation late in the day; water at the base of plants.",
-        "Maintain balanced nutrition and adequate plant spacing for airflow.",
-    ],
-    "management": ["No treatment is suggested by the model. A healthy prediction does not rule out problems that are not visible in one photo."],
-}
-
-# Each entry: keys (normalised substrings matched against the disease name), plus text.
-INFO = [
-    {"keys": ["early blight"], "title": "Early blight",
-     "description": "A fungal leaf disease (Alternaria species) common on tomato and potato, favoured by warm, humid conditions and stressed plants.",
-     "symptoms": ["Dark brown spots with concentric 'target-like' rings, usually on older leaves first.", "Yellowing around lesions; leaves may drop.", "Dark, sunken lesions can also appear on stems or fruit."],
-     "prevention": ["Rotate crops; avoid planting solanaceous crops in the same field year after year.", "Use disease-free seed/seedlings and resistant varieties where available.", "Mulch and avoid wetting foliage; space plants for airflow."],
-     "management": ["Remove and destroy badly affected leaves and crop debris.", "Keep plants well fed and watered to reduce stress.", "If the problem is spreading, ask a local agricultural officer which registered fungicide is suitable."]},
-    {"keys": ["late blight"], "title": "Late blight",
-     "description": "A fast-spreading disease caused by the oomycete Phytophthora infestans, affecting tomato and potato in cool, wet weather.",
-     "symptoms": ["Large, irregular water-soaked patches that turn brown/black.", "White fuzzy growth on the underside of leaves in humid conditions.", "Brown rot on stems, tubers or fruit."],
-     "prevention": ["Plant certified disease-free seed tubers or seedlings.", "Avoid dense planting and overhead irrigation.", "Destroy volunteer plants and cull piles."],
-     "management": ["Act quickly: this disease can destroy a crop within days in suitable weather.", "Remove and safely dispose of infected plants; do not compost them.", "Contact a local agricultural expert promptly for locally approved control options."]},
-    {"keys": ["leaf mold"], "title": "Leaf mould (tomato)",
-     "description": "A fungal disease (Passalora fulva) mostly seen in humid, poorly ventilated conditions such as greenhouses.",
-     "symptoms": ["Pale green/yellow patches on the upper leaf surface.", "Olive-green to brown velvety mould on the underside.", "Leaves curl, wither and may drop."],
-     "prevention": ["Improve ventilation and reduce humidity.", "Avoid leaf wetness; water at soil level.", "Use resistant varieties and clean up debris after harvest."],
-     "management": ["Remove affected leaves.", "Prune to open the canopy.", "Seek local advice if it keeps spreading."]},
-    {"keys": ["septoria"], "title": "Septoria leaf spot",
-     "description": "A fungal disease (Septoria lycopersici) of tomato spread by water splash.",
-     "symptoms": ["Many small circular spots with grey/white centres and dark borders.", "Tiny black dots (fruiting bodies) in the centre of spots.", "Lower leaves yellow and drop first."],
-     "prevention": ["Rotate crops and remove old plant debris.", "Mulch to reduce soil splash; avoid overhead watering.", "Stake plants for airflow."],
-     "management": ["Remove infected lower leaves early.", "Consult a local expert about suitable treatment if infection is widespread."]},
-    {"keys": ["bacterial spot"], "title": "Bacterial spot",
-     "description": "A bacterial disease (Xanthomonas species) affecting tomato and pepper, spread by rain splash, tools and infected seed.",
-     "symptoms": ["Small, dark, water-soaked spots that may have yellow halos.", "Spots can dry and fall out, giving a 'shot-hole' look.", "Raised scabby spots on fruit."],
-     "prevention": ["Use clean seed and healthy transplants.", "Avoid working in wet fields; disinfect tools.", "Rotate with non-host crops."],
-     "management": ["Remove and destroy infected plant material.", "Avoid overhead irrigation.", "Ask a local agricultural officer about approved options; bacterial diseases are hard to cure once established."]},
-    {"keys": ["target spot"], "title": "Target spot",
-     "description": "A fungal disease (Corynespora cassiicola) of tomato favoured by warm, humid weather.",
-     "symptoms": ["Brown spots with concentric rings and a yellow halo.", "Lesions may merge, causing leaf drop.", "Spots can appear on fruit."],
-     "prevention": ["Improve airflow and avoid prolonged leaf wetness.", "Remove crop residue after harvest.", "Rotate crops."],
-     "management": ["Remove infected leaves.", "Consult local experts if disease pressure is high."]},
-    {"keys": ["spider mite"], "title": "Spider mite damage",
-     "description": "Tiny sap-feeding mites (e.g. two-spotted spider mite) that thrive in hot, dry conditions. This is a pest problem rather than a pathogen.",
-     "symptoms": ["Fine yellow stippling on leaves.", "Fine webbing on the underside of leaves or between stems.", "Leaves turn bronze/dry and drop in heavy infestations."],
-     "prevention": ["Avoid water stress and dusty conditions.", "Inspect leaf undersides regularly.", "Conserve natural enemies such as predatory mites."],
-     "management": ["Wash plants with a strong water spray where practical.", "Remove heavily infested leaves.", "Ask a local expert about miticide options; wrong products can make mites worse."]},
-    {"keys": ["yellow leaf curl"], "title": "Tomato yellow leaf curl virus",
-     "description": "A virus spread mainly by whiteflies. There is no cure once a plant is infected.",
-     "symptoms": ["Upward curling and yellowing of leaf edges.", "Stunted plants with small leaves.", "Reduced flowering and fruit set."],
-     "prevention": ["Control whiteflies; use insect-proof nets for nurseries.", "Use resistant/tolerant varieties.", "Remove weeds that host whiteflies."],
-     "management": ["Remove and destroy infected plants to limit spread.", "Seek local advice on integrated whitefly management."]},
-    {"keys": ["mosaic virus"], "title": "Mosaic virus",
-     "description": "A viral disease spread by contaminated hands/tools, seed and sometimes insects. There is no cure for infected plants.",
-     "symptoms": ["Light and dark green mottling or mosaic pattern.", "Distorted, curled or narrow leaves.", "Stunted growth."],
-     "prevention": ["Use certified seed and resistant varieties.", "Wash hands and disinfect tools.", "Control weeds and insect vectors."],
-     "management": ["Remove and destroy infected plants.", "Do not handle healthy plants after infected ones without washing."]},
-    {"keys": ["northern leaf blight"], "title": "Northern leaf blight (maize)",
-     "description": "A fungal disease (Exserohilum turcicum) of maize favoured by moderate temperatures and long periods of leaf wetness.",
-     "symptoms": ["Long, cigar-shaped grey-green to tan lesions on leaves.", "Lesions merge and can blight large leaf areas."],
-     "prevention": ["Plant resistant hybrids.", "Rotate crops and manage residue (tillage).", "Avoid very dense planting."],
+"management": ["जल्दी कार्रवाई करें: अनुकूल मौसम में यह रोग कुछ ही दिनों में फसल को नष्ट कर सकता है।", "संक्रमित पौधों को हटाकर सुरक्षित तरीके से नष्ट करें; उन्हें खाद में न डालें।", "स्थानीय स्तर पर स्वीकृत नियंत्रण उपायों के लिए तुरंत कृषि विशेषज्ञ से संपर्क करें।"]},
+    {"keys": ["leaf mold"], "title": "पत्ती की फफूंदी (टमाटर)",
+     "description": "यह पासालोरा फुल्वा से होने वाला फफूंदजनित रोग है, जो ग्रीनहाउस जैसी नम और कम हवादार जगहों में अधिक दिखता है।",
+     "symptoms": ["पत्ती की ऊपरी सतह पर हल्के हरे या पीले धब्बे।", "पत्ती की निचली सतह पर जैतूनी हरी से भूरी, मखमली फफूंदी।", "पत्तियाँ मुड़ सकती हैं, मुरझा सकती हैं और झड़ सकती हैं।"],
+     "prevention": ["हवा का आवागमन बढ़ाएँ और नमी कम रखें।", "पत्तियों को गीला होने से बचाएँ और मिट्टी के पास पानी दें।", "रोग-प्रतिरोधी किस्में लगाएँ और कटाई के बाद अवशेष साफ करें।"],
+     "management": ["प्रभावित पत्तियों को हटा दें।", "हवा और रोशनी के लिए अनावश्यक शाखाओं की छँटाई करें।", "यदि रोग फैलता रहे, तो स्थानीय कृषि विशेषज्ञ से सलाह लें।"]},
+    {"keys": ["septoria"], "title": "सेप्टोरिया पत्ती धब्बा",
+     "description": "यह सेप्टोरिया लाइकोपर्सिसी से होने वाला टमाटर का फफूंदजनित रोग है, जो पानी के छींटों से फैलता है।",
+     "symptoms": ["धूसर/सफेद केंद्र और गहरे किनारों वाले कई छोटे गोल धब्बे।", "धब्बों के बीच छोटे काले बिंदु दिखाई दे सकते हैं।", "सबसे पहले निचली पत्तियाँ पीली होकर झड़ती हैं।"],
+     "prevention": ["फसल चक्र अपनाएँ और पुराने पौधों के अवशेष हटाएँ।", "मिट्टी के छींटे कम करने के लिए मल्च करें और ऊपर से पानी देने से बचें।", "हवा के आवागमन के लिए पौधों को सहारा देकर बाँधें।"],
+     "management": ["संक्रमित निचली पत्तियों को शुरुआत में ही हटा दें।", "संक्रमण अधिक फैलने पर उपयुक्त उपचार के लिए स्थानीय विशेषज्ञ से सलाह लें।"]},
+    {"keys": ["bacterial spot"], "title": "जीवाणु धब्बा रोग",
+     "description": "यह ज़ैंथोमोनास प्रजाति से होने वाला जीवाणु रोग है, जो टमाटर और मिर्च को प्रभावित करता है। यह बारिश के छींटों, औजारों और संक्रमित बीजों से फैल सकता है।",
+     "symptoms": ["छोटे, गहरे, पानी से भीगे जैसे धब्बे, जिनके चारों ओर पीला घेरा हो सकता है।", "धब्बे सूखकर गिर सकते हैं, जिससे पत्ती में छोटे छेद जैसे दिखते हैं।", "फलों पर उभरे हुए, पपड़ी जैसे धब्बे।"],
+     "prevention": ["स्वच्छ बीज और स्वस्थ पौधों का उपयोग करें।", "गीले खेत में काम करने से बचें और औजारों को कीटाणुरहित करें।", "ऐसी फसलों के साथ फसल चक्र अपनाएँ जिनमें यह रोग नहीं लगता।"],
+     "management": ["संक्रमित पौधों के हिस्सों को हटाकर नष्ट करें।", "ऊपर से सिंचाई करने से बचें।", "स्वीकृत उपायों के लिए स्थानीय कृषि अधिकारी से सलाह लें; रोग स्थापित हो जाने के बाद जीवाणु रोगों को ठीक करना कठिन होता है।"]},
+    {"keys": ["target spot"], "title": "लक्ष्याकार धब्बा रोग",
+     "description": "यह कोरिनेस्पोरा कैसिइकोला से होने वाला टमाटर का फफूंदजनित रोग है, जो गर्म और नम मौसम में बढ़ता है।",
+     "symptoms": ["पीले घेरे और एक के भीतर एक छल्लों वाले भूरे धब्बे।", "धब्बे आपस में मिल सकते हैं, जिससे पत्तियाँ झड़ सकती हैं।", "फलों पर भी धब्बे हो सकते हैं।"],
+     "prevention": ["हवा का आवागमन बढ़ाएँ और पत्तियों को लंबे समय तक गीला न रहने दें।", "कटाई के बाद फसल के अवशेष हटा दें।", "Rotate crops."],
+     "management": ["संक्रमित पत्तियाँ हटा दें।", "रोग का प्रकोप अधिक होने पर स्थानीय विशेषज्ञ से सलाह लें।"]},
+    {"keys": ["spider mite"], "title": "मकड़ी जैसे सूक्ष्म कीट (माइट) से नुकसान",
+     "description": "ये बहुत छोटे रस चूसने वाले माइट हैं, जैसे दो-धब्बों वाला स्पाइडर माइट, जो गर्म और शुष्क मौसम में बढ़ते हैं। यह रोगजनक के बजाय कीट-समस्या है।",
+     "symptoms": ["पत्तियों पर बहुत छोटे पीले बिंदु।", "पत्तियों की निचली सतह या तनों के बीच बारीक जाला।", "अधिक प्रकोप में पत्तियाँ तांबे जैसी भूरी होकर सूख सकती हैं और झड़ सकती हैं।"],
+     "prevention": ["पानी की कमी और धूलभरी परिस्थितियों से बचें।", "पत्तियों की निचली सतह नियमित रूप से जाँचें।", "शिकारी माइट जैसे इनके प्राकृतिक शत्रुओं को सुरक्षित रखें।"],
+     "management": ["जहाँ संभव हो, पानी की तेज धार से पौधों को धोएँ।", "जिन पत्तियों पर बहुत अधिक प्रकोप हो, उन्हें हटा दें।", "माइट नियंत्रण के विकल्पों के लिए स्थानीय विशेषज्ञ से पूछें; गलत उत्पाद स्थिति बिगाड़ सकते हैं।"]},
+    {"keys": ["yellow leaf curl"], "title": "टमाटर पीली पत्ती मोड़ विषाणु",
+     "description": "यह विषाणु मुख्यतः सफेद मक्खी से फैलता है। पौधे के संक्रमित होने के बाद इसका कोई उपचार नहीं है।",
+     "symptoms": ["पत्तियों के किनारों का ऊपर की ओर मुड़ना और पीला पड़ना।", "पौधों की वृद्धि रुकना और पत्तियाँ छोटी रहना।", "फूल और फल कम लगना।"],
+     "prevention": ["सफेद मक्खी को नियंत्रित करें और नर्सरी में कीटरोधी जाली लगाएँ।", "रोग-प्रतिरोधी या सहनशील किस्मों का उपयोग करें।", "सफेद मक्खी को आश्रय देने वाले खरपतवार हटाएँ।"],
+     "management": ["रोग का फैलाव रोकने के लिए संक्रमित पौधों को हटाकर नष्ट करें।", "सफेद मक्खी के समेकित नियंत्रण के लिए स्थानीय सलाह लें।"]},
+    {"keys": ["mosaic virus"], "title": "मोज़ेक विषाणु",
+     "description": "यह विषाणुजनित रोग दूषित हाथों/औजारों, बीजों और कभी-कभी कीटों से फैलता है। संक्रमित पौधों का कोई उपचार नहीं है।",
+     "symptoms": ["पत्तियों पर हल्के और गहरे हरे रंग का चितकबरा मोज़ेक पैटर्न।", "पत्तियों का विकृत, मुड़ा हुआ या संकरा होना।", "पौधों की वृद्धि रुक जाना।"],
+     "prevention": ["प्रमाणित बीज और रोग-प्रतिरोधी किस्मों का उपयोग करें।", "हाथ धोएँ और औजारों को कीटाणुरहित करें।", "खरपतवार और रोग फैलाने वाले कीटों को नियंत्रित करें।"],
+     "management": ["Remove and destroy infected plants.", "संक्रमित पौधों को छूने के बाद हाथ धोए बिना स्वस्थ पौधों को न छुएँ।"]},
+    {"keys": ["northern leaf blight"], "title": "मक्का का उत्तरी पत्ती झुलसा रोग",
+     "description": "यह एक्ससेरोहिलम टर्सिकम से होने वाला मक्का का फफूंदजनित रोग है, जो मध्यम तापमान और पत्तियों के लंबे समय तक गीले रहने पर बढ़ता है।",
+     "symptoms": ["पत्तियों पर लंबे, सिगार के आकार के धूसर-हरे से हल्के भूरे घाव।", "घाव आपस में मिलकर पत्ती के बड़े हिस्से को झुलसा सकते हैं।"],
+     "prevention": ["रोग-प्रतिरोधी संकर किस्में लगाएँ।", "फसल चक्र अपनाएँ और अवशेषों का उचित प्रबंधन करें।", "Avoid very dense planting."],
      "management": ["Monitor fields, especially before and around tasselling.", "Consult a local expert if lesions reach upper leaves early."]},
-    {"keys": ["gray leaf spot", "grey leaf spot", "cercospora"], "title": "Gray leaf spot (maize)",
-     "description": "A fungal disease (Cercospora zeae-maydis) of maize favoured by warm, humid weather and maize residue.",
-     "symptoms": ["Narrow, rectangular tan to grey lesions running parallel to leaf veins.", "Lesions may merge and kill large leaf areas."],
-     "prevention": ["Rotate away from maize; manage residue.", "Use tolerant hybrids.", "Improve airflow through suitable plant spacing."],
-     "management": ["Scout fields regularly in humid weather.", "Consult local experts if infection is spreading to upper leaves."]},
-    {"keys": ["common rust"], "title": "Common rust (maize)",
-     "description": "A fungal disease (Puccinia sorghi) producing rust-coloured pustules, favoured by cool, humid conditions.",
-     "symptoms": ["Small, circular to elongated reddish-brown pustules on both leaf surfaces.", "Pustules release powdery rust-coloured spores.", "Leaves may yellow and dry out in severe cases."],
-     "prevention": ["Plant resistant hybrids.", "Avoid late planting where rust pressure is high."],
-     "management": ["Monitor fields; severe early infection is more damaging.", "Seek local advice if pustules are widespread."]},
-    {"keys": ["cedar apple rust"], "title": "Cedar apple rust",
-     "description": "A fungal disease of apple that needs both apple and juniper/cedar hosts to complete its life cycle.",
-     "symptoms": ["Bright yellow-orange spots on leaves, often with small dark centres.", "Tube-like structures may develop on the underside of leaves."],
-     "prevention": ["Choose resistant apple varieties.", "Remove nearby juniper/cedar hosts where practical."],
-     "management": ["Remove affected leaves where feasible.", "Consult local horticultural experts about protection timing."]},
-    {"keys": ["apple scab", "scab"], "title": "Apple scab",
-     "description": "A fungal disease (Venturia inaequalis) of apple favoured by cool, wet spring weather.",
-     "symptoms": ["Olive-green to brown velvety spots on leaves.", "Scabby, cracked lesions on fruit.", "Premature leaf drop."],
-     "prevention": ["Rake and remove fallen leaves in autumn.", "Prune for airflow.", "Use scab-resistant varieties."],
-     "management": ["Remove infected leaves and fruit.", "Consult local experts about timing of protective measures."]},
-    {"keys": ["black rot"], "title": "Black rot",
-     "description": "A fungal disease affecting apple and grape, favoured by warm, wet weather; overwinters on mummified fruit and infected wood.",
-     "symptoms": ["Brown leaf spots with darker borders (apple 'frogeye' leaf spot).", "Dark, shrivelled, rotting fruit.", "Tiny black fruiting bodies on lesions."],
-     "prevention": ["Remove mummified fruit and prune out infected wood.", "Improve canopy airflow.", "Practise sanitation after harvest."],
-     "management": ["Remove infected plant parts and dispose of them away from the orchard/vineyard.", "Consult local experts for region-specific protection plans."]},
-    {"keys": ["esca", "black measles"], "title": "Esca (black measles) of grape",
-     "description": "A complex trunk disease of grapevine caused by several fungi; symptoms can appear suddenly in warm weather.",
-     "symptoms": ["Yellow or brown 'tiger-stripe' patterns between leaf veins.", "Dark spots on berries; shrivelled fruit.", "Internal wood decay in older vines."],
-     "prevention": ["Protect pruning wounds and avoid large wounds.", "Use clean planting material."],
-     "management": ["Mark and monitor affected vines; remove severely diseased wood.", "Consult viticulture specialists; options are limited once established."]},
-    {"keys": ["leaf blight", "isariopsis"], "title": "Leaf blight (grape)",
-     "description": "A fungal leaf disease (Isariopsis/Pseudocercospora) of grape typically appearing late in the season.",
-     "symptoms": ["Irregular dark brown spots on leaves.", "Premature leaf drop in heavy infection."],
-     "prevention": ["Ensure good canopy airflow and sanitation.", "Remove fallen leaves."],
-     "management": ["Remove affected leaves where practical.", "Consult local experts if the disease progresses."]},
-    {"keys": ["powdery mildew"], "title": "Powdery mildew",
-     "description": "A fungal disease producing a white powdery coating; it thrives in moderate temperatures and humid air, and does not need free water on leaves.",
-     "symptoms": ["White to grey powdery patches on leaves and shoots.", "Leaf distortion, yellowing or premature drop."],
-     "prevention": ["Provide airflow and light penetration through pruning and spacing.", "Choose resistant varieties."],
-     "management": ["Remove badly infected parts.", "Consult local experts about suitable options."]},
-    {"keys": ["leaf scorch"], "title": "Leaf scorch",
-     "description": "Browning of leaf margins and tips that can be caused by fungal infection but also by drought, heat or salt stress, so it is hard to be sure from a photo.",
-     "symptoms": ["Brown, dry leaf edges or irregular scorched patches.", "Dark purple-brown spots (strawberry) in fungal forms."],
-     "prevention": ["Maintain even irrigation and good drainage.", "Remove infected leaves after harvest."],
-     "management": ["Check watering and soil conditions first.", "Consult a local expert to confirm the cause."]},
-    {"keys": ["haunglongbing", "huanglongbing", "citrus greening"], "title": "Citrus greening (Huanglongbing)",
-     "description": "A serious bacterial disease of citrus spread by psyllid insects. There is no cure.",
-     "symptoms": ["Blotchy yellow mottling of leaves, often asymmetric.", "Small, lopsided, bitter fruit that stays partly green.", "Twig dieback and tree decline."],
-     "prevention": ["Control psyllid vectors.", "Plant certified disease-free nursery stock."],
-     "management": ["Report suspected cases to local plant-health authorities; confirmation needs laboratory testing."]},
+    {"keys": ["gray leaf spot", "grey leaf spot", "cercospora"], "title": "मक्का का धूसर पत्ती धब्बा रोग",
+     "description": "यह सर्कोस्पोरा ज़ी-मेयडिस से होने वाला मक्का का फफूंदजनित रोग है, जो गर्म-नम मौसम और मक्का के अवशेषों में बढ़ता है।",
+     "symptoms": ["पत्ती की नसों के समानांतर लंबे, पतले, आयताकार हल्के भूरे से धूसर घाव।", "घाव मिलकर पत्ती के बड़े हिस्से को नष्ट कर सकते हैं।"],
+     "prevention": ["मक्का के अलावा अन्य फसलों के साथ फसल चक्र अपनाएँ और अवशेषों का प्रबंधन करें।", "रोग सहन करने वाली संकर किस्में लगाएँ।", "पौधों के बीच उचित दूरी रखकर हवा का आवागमन बढ़ाएँ।"],
+     "management": ["नम मौसम में खेतों की नियमित निगरानी करें।", "यदि संक्रमण ऊपर की पत्तियों तक फैल रहा हो, तो स्थानीय विशेषज्ञ से सलाह लें।"]},
+    {"keys": ["common rust"], "title": "मक्का का सामान्य रतुआ रोग",
+     "description": "यह पक्सिनिया सोरघी से होने वाला फफूंदजनित रोग है, जिसमें ठंडे और नम मौसम में जंग जैसे रंग के उभरे धब्बे बनते हैं।",
+     "symptoms": ["पत्ती की दोनों सतहों पर छोटे गोल या लंबे लाल-भूरे उभरे धब्बे।", "इन धब्बों से जंग जैसे रंग का चूर्ण निकल सकता है।", "गंभीर स्थिति में पत्तियाँ पीली होकर सूख सकती हैं।"],
+     "prevention": ["रोग-प्रतिरोधी संकर किस्में लगाएँ।", "जहाँ रतुआ रोग का प्रकोप अधिक हो, वहाँ देर से बुवाई करने से बचें।"],
+     "management": ["खेतों की निगरानी करें; शुरुआती अवस्था में गंभीर संक्रमण अधिक नुकसान पहुँचाता है।", "यदि धब्बे व्यापक रूप से दिखाई दें, तो स्थानीय सलाह लें।"]},
+    {"keys": ["cedar apple rust"], "title": "सेब का सीडर रतुआ रोग",
+     "description": "सेब का यह फफूंदजनित रोग अपना जीवन चक्र पूरा करने के लिए सेब और जुनिपर/सीडर दोनों पौधों पर निर्भर करता है।",
+     "symptoms": ["पत्तियों पर चमकीले पीले-नारंगी धब्बे, जिनके बीच छोटे गहरे बिंदु हो सकते हैं।", "पत्तियों की निचली सतह पर नली जैसी संरचनाएँ बन सकती हैं।"],
+     "prevention": ["रोग-प्रतिरोधी सेब की किस्में चुनें।", "जहाँ संभव हो, आसपास के जुनिपर/सीडर पौधों को हटाएँ।"],
+     "management": ["जहाँ संभव हो, प्रभावित पत्तियाँ हटा दें।", "बचाव के सही समय के लिए स्थानीय बागवानी विशेषज्ञ से सलाह लें।"]},
+    {"keys": ["apple scab", "scab"], "title": "सेब का स्कैब रोग",
+     "description": "यह वेंटूरिया इनएक्वालिस से होने वाला सेब का फफूंदजनित रोग है, जो वसंत के ठंडे और नम मौसम में बढ़ता है।",
+     "symptoms": ["पत्तियों पर जैतूनी हरे से भूरे, मखमली धब्बे।", "फलों पर पपड़ीदार और फटे हुए घाव।", "समय से पहले पत्तियाँ झड़ना।"],
+     "prevention": ["पतझड़ में गिरी पत्तियों को इकट्ठा करके हटा दें।", "हवा के आवागमन के लिए छँटाई करें।", "स्कैब रोग-प्रतिरोधी किस्मों का उपयोग करें।"],
+     "management": ["संक्रमित पत्तियों और फलों को हटा दें।", "बचाव के उपायों के सही समय के लिए स्थानीय विशेषज्ञ से सलाह लें।"]},
+    {"keys": ["black rot"], "title": "काला सड़न रोग",
+     "description": "यह सेब और अंगूर को प्रभावित करने वाला फफूंदजनित रोग है, जो गर्म और नम मौसम में बढ़ता है। यह सूखे-सिकुड़े फलों और संक्रमित लकड़ी पर जीवित रह सकता है।",
+     "symptoms": ["पत्तियों पर गहरे किनारों वाले भूरे धब्बे (सेब में मेंढक की आँख जैसे धब्बे)।", "फल गहरे रंग के होकर सिकुड़ते और सड़ते हैं।", "घावों पर छोटे काले बीजाणु बनाने वाले बिंदु दिखाई दे सकते हैं।"],
+     "prevention": ["सूखे-सिकुड़े फल हटाएँ और संक्रमित लकड़ी की छँटाई करें।", "पेड़ की शाखाओं के बीच हवा का आवागमन बढ़ाएँ।", "कटाई के बाद खेत/बाग की सफाई रखें।"],
+     "management": ["संक्रमित हिस्सों को हटाकर बाग या अंगूर के बगीचे से दूर सुरक्षित तरीके से नष्ट करें।", "क्षेत्र के अनुसार बचाव योजना के लिए स्थानीय विशेषज्ञ से सलाह लें।"]},
+    {"keys": ["esca", "black measles"], "title": "अंगूर का एस्का (ब्लैक मीज़ल्स) रोग",
+     "description": "अंगूर की बेल का यह तना रोग कई प्रकार के फफूंदों से जुड़ा है; गर्म मौसम में लक्षण अचानक दिखाई दे सकते हैं।",
+     "symptoms": ["पत्ती की नसों के बीच पीली या भूरी बाघ-धारी जैसी आकृतियाँ।", "अंगूर के दानों पर गहरे धब्बे और फलों का सिकुड़ना।", "पुरानी बेलों की लकड़ी अंदर से सड़ सकती है।"],
+     "prevention": ["छँटाई के घावों की सुरक्षा करें और बड़े घाव बनाने से बचें।", "स्वच्छ रोपण सामग्री का उपयोग करें।"],
+     "management": ["प्रभावित बेलों को चिह्नित कर निगरानी करें और गंभीर रूप से रोगग्रस्त लकड़ी हटाएँ।", "अंगूर की खेती के विशेषज्ञ से सलाह लें; रोग स्थापित होने के बाद विकल्प सीमित होते हैं।"]},
+    {"keys": ["leaf blight", "isariopsis"], "title": "अंगूर का पत्ती झुलसा रोग",
+     "description": "यह अंगूर का फफूंदजनित पत्ती रोग है, जो आमतौर पर मौसम के उत्तरार्ध में दिखाई देता है।",
+     "symptoms": ["पत्तियों पर अनियमित गहरे भूरे धब्बे।", "गंभीर संक्रमण में पत्तियाँ समय से पहले झड़ सकती हैं।"],
+     "prevention": ["बेलों में हवा का अच्छा आवागमन रखें और साफ-सफाई बनाए रखें।", "गिरी हुई पत्तियाँ हटा दें।"],
+     "management": ["जहाँ संभव हो, प्रभावित पत्तियाँ हटा दें।", "रोग बढ़ने पर स्थानीय विशेषज्ञ से सलाह लें।"]},
+    {"keys": ["powdery mildew"], "title": "चूर्णिल आसिता",
+     "description": "यह फफूंदजनित रोग है जिसमें पत्तियों पर सफेद चूर्ण जैसी परत बनती है। यह मध्यम तापमान और नम हवा में बढ़ता है; पत्तियों पर पानी होना जरूरी नहीं है।",
+     "symptoms": ["पत्तियों और नई टहनियों पर सफेद से धूसर चूर्ण जैसे धब्बे।", "पत्तियों का आकार बिगड़ना, पीला पड़ना या समय से पहले झड़ना।"],
+     "prevention": ["छँटाई और उचित दूरी से हवा तथा रोशनी का आवागमन बढ़ाएँ।", "रोग-प्रतिरोधी किस्में चुनें।"],
+     "management": ["बहुत अधिक संक्रमित हिस्सों को हटा दें।", "उपयुक्त उपायों के लिए स्थानीय विशेषज्ञ से सलाह लें।"]},
+    {"keys": ["leaf scorch"], "title": "पत्ती झुलसन",
+     "description": "पत्तियों के किनारों और सिरों का भूरा होना फफूंद संक्रमण, सूखे, गर्मी या लवणता के तनाव से हो सकता है; केवल तस्वीर से कारण निश्चित करना कठिन है।",
+     "symptoms": ["पत्तियों के किनारे भूरे और सूखे होना या अनियमित झुलसे हुए धब्बे।", "फफूंदजनित स्थिति में स्ट्रॉबेरी की पत्तियों पर गहरे बैंगनी-भूरे धब्बे हो सकते हैं।"],
+     "prevention": ["नियमित सिंचाई और अच्छी जल निकासी बनाए रखें।", "कटाई के बाद संक्रमित पत्तियाँ हटा दें।"],
+     "management": ["सबसे पहले सिंचाई और मिट्टी की स्थिति जाँचें।", "कारण की पुष्टि के लिए स्थानीय विशेषज्ञ से सलाह लें।"]},
+    {"keys": ["haunglongbing", "huanglongbing", "citrus greening"], "title": "सिट्रस ग्रीनिंग (हुआंगलोंगबिंग)",
+     "description": "यह साइट्रस फसलों का गंभीर जीवाणु रोग है, जो सिल्लिड कीटों से फैलता है। इसका कोई उपचार नहीं है।",
+     "symptoms": ["पत्तियों पर अनियमित पीले चितकबरे धब्बे, अक्सर दोनों तरफ असमान।", "फल छोटे, टेढ़े और कड़वे हो सकते हैं तथा कुछ हिस्सा हरा रह सकता है।", "टहनियाँ सूखने लगती हैं और पेड़ कमजोर होता जाता है।"],
+     "prevention": ["रोग फैलाने वाले सिल्लिड कीटों को नियंत्रित करें।", "प्रमाणित रोगमुक्त नर्सरी पौधे लगाएँ।"],
+     "management": ["संदेह होने पर स्थानीय पादप स्वास्थ्य अधिकारियों को सूचित करें; पुष्टि के लिए प्रयोगशाला जाँच आवश्यक है।"]},
 ]
 
 _GENERIC = {
-    "description": "Detailed information for this class has not been added to the application yet.",
-    "symptoms": ["Not available."],
-    "prevention": ["Practise crop rotation, field hygiene and avoid prolonged leaf wetness.", "Use healthy seed/planting material."],
-    "management": ["Consult a local agricultural extension officer for diagnosis and treatment advice."],
+    "description": "इस श्रेणी की विस्तृत जानकारी अभी ऐप में उपलब्ध नहीं है।",
+    "symptoms": ["जानकारी उपलब्ध नहीं है।"],
+    "prevention": ["फसल चक्र अपनाएँ, खेत साफ रखें और पत्तियों को लंबे समय तक गीला न रहने दें।", "स्वस्थ बीज और रोपण सामग्री का उपयोग करें।"],
+    "management": ["रोग की पुष्टि और उपचार संबंधी सलाह के लिए स्थानीय कृषि अधिकारी से संपर्क करें।"],
 }
 
 
@@ -138,13 +106,13 @@ def normalise(text: str) -> str:
 
 
 def split_class_name(class_name: str):
-    """'Tomato___Early_blight' -> ('Tomato', 'Early blight'). Falls back gracefully."""
+    """'Tomato___Early_blight' -> ('Tomato', 'अगेती झुलसा'). Falls back gracefully."""
     if "___" in class_name:
         crop, disease = class_name.split("___", 1)
     elif "__" in class_name:
         crop, disease = class_name.split("__", 1)
     else:
-        crop, disease = "Unknown", class_name
+        crop, disease = "अज्ञात", class_name
     clean = lambda s: re.sub(r"\s+", " ", s.replace("_", " ")).strip(" ,")
     return clean(crop), clean(disease)
 
@@ -155,13 +123,6 @@ def is_healthy(disease_name: str) -> bool:
 
 def get_disease_info(disease_name: str) -> dict:
     if is_healthy(disease_name):
-        return {"title": "Healthy", **HEALTHY}
+        return {"title": "स्वस्थ", **HEALTHY}
     norm = normalise(disease_name)
     candidates = []
-    for entry in INFO:
-        for key in entry["keys"]:
-            if key in norm:
-                candidates.append((len(key), entry))
-    if candidates:
-        return max(candidates, key=lambda c: c[0])[1]
-    return {"title": disease_name, **_GENERIC}
