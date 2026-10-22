@@ -11,6 +11,12 @@ from inference import model_files_exist, predict, validate_upload
 from disease_info import get_disease_info, is_healthy, split_class_name
 
 app = Flask(__name__)
+@app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return response
 app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
 
 
